@@ -62,7 +62,7 @@ make
 # to make the above cmake command work. Your results may vary.
 
 4) Build the example app and driver code:
-cd ../.. #we were in the box2d/Build subdirectory.
+cd ../../.. #we were in the box2d/Box2D/Build subdirectory.
 make
 
 #NOTE: the example code requires libSDL and expects sdl-config to be in
