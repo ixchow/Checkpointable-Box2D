@@ -1,0 +1,103 @@
+Index: Box2D/Box2D/Dynamics/b2World.h
+===================================================================
+--- Box2D/Box2D/Dynamics/b2World.h	(revision 241)
++++ Box2D/Box2D/Dynamics/b2World.h	(working copy)
+@@ -204,7 +204,7 @@
+ 	/// @warning this should be called outside of a time step.
+ 	void Dump();
+ 
+-private:
++//private:
+ 
+ 	// m_flags
+ 	enum
+Index: Box2D/Box2D/Common/b2StackAllocator.h
+===================================================================
+--- Box2D/Box2D/Common/b2StackAllocator.h	(revision 241)
++++ Box2D/Box2D/Common/b2StackAllocator.h	(working copy)
+@@ -45,9 +45,9 @@
+ 
+ 	int32 GetMaxAllocation() const;
+ 
+-private:
++//private: //IX: I need access to examine the entrails here.
+ 
+-	char m_data[b2_stackSize];
++	char *m_data; //IX: I'll make this allocate with malloc so I can ignore it in my memory tracking code.
+ 	int32 m_index;
+ 
+ 	int32 m_allocation;
+Index: Box2D/Box2D/Common/b2Settings.cpp
+===================================================================
+--- Box2D/Box2D/Common/b2Settings.cpp	(revision 241)
++++ Box2D/Box2D/Common/b2Settings.cpp	(working copy)
+@@ -23,6 +23,8 @@
+ 
+ b2Version b2_version = {2, 3, 0};
+ 
++/*
++ Apparently now link complains about multiply-defined symbols? Odd.
+ // Memory allocators. Modify these to use your own allocator.
+ void* b2Alloc(int32 size)
+ {
+@@ -33,6 +35,7 @@
+ {
+ 	free(mem);
+ }
++*/
+ 
+ // You can modify this to use your logging facility.
+ void b2Log(const char* string, ...)
+@@ -41,4 +44,4 @@
+ 	va_start(args, string);
+ 	vprintf(string, args);
+ 	va_end(args);
+-}
+\ No newline at end of file
++}
+Index: Box2D/Box2D/Common/b2StackAllocator.cpp
+===================================================================
+--- Box2D/Box2D/Common/b2StackAllocator.cpp	(revision 241)
++++ Box2D/Box2D/Common/b2StackAllocator.cpp	(working copy)
+@@ -19,18 +19,24 @@
+ #include <Box2D/Common/b2StackAllocator.h>
+ #include <Box2D/Common/b2Math.h>
+ 
++#include <cstdlib>
++#include <memory.h>
++
+ b2StackAllocator::b2StackAllocator()
+ {
+ 	m_index = 0;
+ 	m_allocation = 0;
+ 	m_maxAllocation = 0;
+ 	m_entryCount = 0;
++	m_data = (char *)malloc(b2_stackSize); //IX: note: not using b2Alloc!
+ }
+ 
+ b2StackAllocator::~b2StackAllocator()
+ {
+ 	b2Assert(m_index == 0);
+ 	b2Assert(m_entryCount == 0);
++	free(m_data); //IX: note: not using b2Free!
++	m_data = 0;
+ }
+ 
+ void* b2StackAllocator::Allocate(int32 size)
+@@ -49,12 +55,16 @@
+ 		entry->data = m_data + m_index;
+ 		entry->usedMalloc = false;
+ 		m_index += size;
++		//IX: I want to be very sure there's no non-determinism from existing
++		// stack contents.
++		memset(entry->data, 0, size);
+ 	}
+ 
+ 	m_allocation += size;
+ 	m_maxAllocation = b2Max(m_maxAllocation, m_allocation);
+ 	++m_entryCount;
+ 
++
+ 	return entry->data;
+ }
+ 
