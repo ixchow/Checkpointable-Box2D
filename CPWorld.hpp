@@ -6,6 +6,7 @@
 #include "SimMem.hpp"
 
 #include <memory>
+#include <vector>
 
 //For each tick, we record the control applied to arrive at that tick and
 // the simulation state resulting from this control:
@@ -27,9 +28,13 @@ public:
 
 	Sim sim;
 	float time_acc;
+	float alt_acc;
 
 	std::shared_ptr< SimMem > start; //starting state of simulator
 	std::vector< SimPt > states;
+
+	//other states that will be simulated with the same control we supplied:
+	std::vector< std::shared_ptr< SimMem > > others;
 };
 
 

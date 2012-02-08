@@ -313,13 +313,13 @@ static void draw_body(const b2Body *b) {
 	glPopMatrix();
 }
 
-void Sim::draw() const {
+void Sim::draw(float fade) const {
 	for (vector< b2Body * >::const_iterator b = stuff.begin(); b != stuff.end(); ++b) {
-		glColor3f(0.2f, 0.2f, 0.2f);
+		glColor4f(0.2f, 0.2f, 0.2f, fade);
 		draw_body(*b);
 	}
 
-	glColor3f(0.7f, 0.0f, 0.0f);
+	glColor4f(0.7f, 0.0f, 0.0f, fade);
 	draw_body(wheel);
 
 }

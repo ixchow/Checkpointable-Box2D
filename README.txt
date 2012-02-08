@@ -1,12 +1,45 @@
 Checkpointable Box2D
 --------------------
-
 This is a (slightly) tweaked version of Box2D which allows for checkpointing.
 Nothing of the library itself is changed (except a tweak to the StackAllocator
 to save on memory).
 
-The real magic is in the driver code that tracks allocations and stores memory
-diffs.
+The real magic is in the code that tracks allocations and stores memory
+diffs -- this happens in SimMem.*pp and Sim.*pp's b2Alloc/b2Free functions.
+Basically, you can do:
+
+Sim sim; //the simulation.
+
+SimMem mem;
+sim.save(mem);
+//do whatever with sim, e.g. sim.tick()...
+sim.load(mem);
+//sim is now in *exactly* the same state is was.
+
+//NOTE:
+// you shouldn't try to load memory saved by another 'Sim' object, or have
+// more than one Sim object per thread.
+Sim otherSim; //BAD! Will assert()
+otherSim.load(mem); //WORSE! Will probably segfault!
+
+
+The demo program shows how this is useful for time control and saving replays.
+Use the left and right arrows to control the circle.
+Use the keys 'a' and 'd' to rewind and fast-forward time.
+Press 'SPACE' to start a replay from the beginning of the level.
+
+Time control is a simple as storing SimMem's during play and doing a
+sim.load() to go back.
+
+Replays take advantage of the fact that a simulator which has loaded a SimMem
+is guaranteed to be in *exactly* the same state, so just re-simulates from the
+beginning with the same control signals. (It even uses the *same Sim* for the
+replay and the main play, by switching it between active states with save and
+load!)
+
+
+Substantial memory savings can be had by calling sim.save(mem, rel) to store
+memory diffs relative to a recent 'keyframe' of memory.
 
 
 How to make it go
@@ -36,7 +69,7 @@ make
 # the path. Also, beware llvm-gcc on OSX; it's a buggy compiler.
 
 5) Run the example app:
-./checkpoint_example
+./main
 
 
 Who owns this stuff

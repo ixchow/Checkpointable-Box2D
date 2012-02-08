@@ -74,7 +74,7 @@ public:
 
 	void tick(Control const &control);
 
-	void draw() const;
+	void draw(float fade = 1.0f) const;
 
 	void save(SimMem &mem, SimMem *rel = NULL) const;
 	void load(SimMem const &mem);
